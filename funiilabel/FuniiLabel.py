@@ -91,7 +91,6 @@ class FuniiLabel(QMainWindow):
     def open_file(self):
         """Open a QFileDialog to allow the user to open a file into the application."""
         filename, accepted = QFileDialog.getOpenFileName(self, "Open File")
-
         if accepted:
             self.load_file(filename)
 
@@ -156,7 +155,7 @@ class FuniiLabel(QMainWindow):
             f.write('Frame, Label\n')
             labels = []
             for file in path.parent.glob(path.stem + '*.jpeg'):
-                labels.append(re.search('_frame_(\d*)_label_(.*)\.jpeg', str(file)).groups())
+                labels.append(re.search(r'_frame_(\d*)_label_(.*)\.jpeg', str(file)).groups())
                 labels[-1] = (int(labels[-1][0]), labels[-1][1])
             labels = sorted(labels, key=lambda tup: tup[0])
             f.writelines([str(x) + ',' + y + '\n' for x, y in labels])

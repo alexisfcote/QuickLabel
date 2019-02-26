@@ -1,7 +1,12 @@
 import pytest
+import pkg_resources
+import shutil
+from os.path import join as pjoin
+
 
 from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QFileDialog
+
 
 from funiilabel import FuniiLabel
 
@@ -12,7 +17,14 @@ def window(qtbot):
     new_window = FuniiLabel.FuniiLabel()
     qtbot.add_widget(new_window)
     new_window.show()
-    return new_window
+    yield new_window
+    if pkg_resources.resource_isdir("tests.test_video", "label"):
+        vid_folder = pkg_resources.resource_filename(
+                "tests.test_video", "label"
+            )
+        shutil.rmtree(vid_folder)
+    return
+
 
 
 def test_window_title(window):
@@ -29,8 +41,35 @@ def test_open_file(window, qtbot, mock):
     """
     qtbot.mouseClick(window.file_sub_menu, Qt.LeftButton)
     qtbot.keyClick(window.file_sub_menu, Qt.Key_Down)
-    mock.patch.object(QFileDialog, 'getOpenFileName', return_value=('', ''))
+    vid_path = pkg_resources.resource_filename(
+            "tests.test_video", "vid.mp4"
+        )
+    mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(vid_path, 1))
     qtbot.keyClick(window.file_sub_menu, Qt.Key_Enter)
+    for _ in  range(10):
+        qtbot.keyPress(window, Qt.Key_F)
+    for _ in  range(10):
+        qtbot.keyPress(window, Qt.Key_E)
+    for _ in  range(10):
+        qtbot.keyPress(window, Qt.Key_S)
+    for _ in  range(10):
+        qtbot.keyPress(window, Qt.Key_O)
+    
+    qtbot.keyClick(window.file_sub_menu, Qt.Key_Down)
+    qtbot.keyClick(window.file_sub_menu, Qt.Key_Down)
+    qtbot.keyClick(window.file_sub_menu, Qt.Key_Down)
+
+    mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(vid_path, 1))
+    qtbot.keyClick(window.file_sub_menu, Qt.Key_Enter)
+    assert pkg_resources.resource_exists(
+            "tests.test_video", pjoin("label","vid_frame_40_label_Other.jpeg")
+        )
+    assert not pkg_resources.resource_exists(
+            "tests.test_video", pjoin("label","vid_frame_41_label_Other.jpeg")
+        )
+    assert pkg_resources.resource_exists(
+            "tests.test_video", pjoin("label","vid.txt")
+        )
 
 
 def test_about_dialog(window, qtbot, mock):
