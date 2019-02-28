@@ -1,18 +1,19 @@
-import sys
-import time
 import os
 import pathlib
 import re
-import numpy as np
+import sys
 
+import numpy as np
 import pkg_resources
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (QAction, QApplication, QDesktopWidget, QDialog,
                              QFileDialog, QHBoxLayout, QLabel, QMainWindow,
-                             QToolBar, QVBoxLayout, QWidget)
+                             QVBoxLayout, QWidget)
 
 import cv2
+from funiilabel.config import *
+
 
 class FuniiLabel(QMainWindow):
     """Create the main window that stores all of the widgets necessary for the application."""
@@ -45,7 +46,7 @@ class FuniiLabel(QMainWindow):
 
         self.filename = None
         self.last_label = None
-        self.batch = None
+        self.batch = []
 
     def file_menu(self):
         """Create a file submenu with an Open File item that opens a file dialog."""
@@ -71,7 +72,6 @@ class FuniiLabel(QMainWindow):
         self.record_label_to_file_action.setShortcut("CTRL+R")
         self.record_label_to_file_action.triggered.connect(self.record_label_to_file)
 
-
         self.file_sub_menu.addAction(self.open_action)
         self.file_sub_menu.addAction(self.open_batch_action)
         self.file_sub_menu.addAction(self.exit_action)
@@ -93,15 +93,28 @@ class FuniiLabel(QMainWindow):
         filename, accepted = QFileDialog.getOpenFileName(self, "Open File")
         if accepted:
             self.load_file(filename)
+            self.batch = []
 
     def open_batch(self):
-        foldername = QFileDialog.getExistingDirectory(self, "Open Folder")
-        if foldername:
-            print(foldername)
+        folderpath = pathlib.Path(QFileDialog.getExistingDirectory(self, "Open Folder"))
+        if not folderpath:
+            return
 
+        self.batch = []
+        files = folderpath.glob("*.mp4")
+        already_labelled_files = set([x.stem.split('_frame_')[0] for x in (folderpath / 'label').glob('*.jpeg')])
+
+        for file in files:
+            if os.path.getsize(folderpath / file) > MIN_FILE_SIZE:
+                if not (folderpath / file).stem in already_labelled_files:
+                    self.batch.append(str(folderpath / file))
+
+        if len(self.batch) > 0:
+            self.load_file(self.batch.pop())
 
     def load_file(self, filename):
         self.filename = filename
+        self.status_bar.showMessage("Video Loaded", 5000)
         self.last_label = None
         self.cap = cv2.VideoCapture(self.filename)
         _, frame = self.cap.read()
@@ -110,7 +123,10 @@ class FuniiLabel(QMainWindow):
         self.bytesPerLine = 3 * self.width
         self.resize(self.width, self.height)
         self.display_next_image()
-
+        if len(self.batch) > 0:
+            self.status_bar.showMessage(f"{self.filename}. {len(self.batch)} files to go")
+        else:
+            self.status_bar.showMessage(f"{self.filename}.")
 
     def display_next_image(self):
         # Capture frame-by-frame
@@ -119,23 +135,48 @@ class FuniiLabel(QMainWindow):
         if not ret:
             return False
         font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(frame,self.last_label,(10,self.height-10), font, 4,(255,255,255),3,cv2.LINE_AA)
+        cv2.putText(
+            frame,
+            self.last_label,
+            (10, self.height - 10),
+            font,
+            4,
+            (255, 255, 255),
+            3,
+            cv2.LINE_AA,
+        )
+        cv2.putText(
+            frame,
+            str(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)))
+            + '/' + str(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))),
+            (self.width-250, self.height - 10),
+            font,
+            1,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
 
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        
-        qImg = QImage(frame.data, self.width, self.height, self.bytesPerLine, QImage.Format_RGB888)
+
+        qImg = QImage(
+            frame.data, self.width, self.height, self.bytesPerLine, QImage.Format_RGB888
+        )
         pixmap = QPixmap.fromImage(qImg)
         self.label.setPixmap(pixmap)
         return True
 
     def record_label(self):
         path = pathlib.Path(self.filename)
-        path.parent.joinpath('label').mkdir(exist_ok=True)
-        path = (path.parent.joinpath('label') / 
-               (path.stem 
-               + '_frame_' + str(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)-1)) 
-               + '_label_' + self.last_label 
-               + '.jpeg'))
+        path.parent.joinpath("label").mkdir(exist_ok=True)
+        path = path.parent.joinpath("label") / (
+            path.stem
+            + "_frame_"
+            + str(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1))
+            + "_label_"
+            + self.last_label
+            + ".jpeg"
+        )
         cv2.imwrite(str(path), self.frame)
 
     def record_label_to_file(self):
@@ -146,21 +187,19 @@ class FuniiLabel(QMainWindow):
 
     def write_label_to_file(self, filename):
         path = pathlib.Path(filename)
-        path.parent.joinpath('label').mkdir(exist_ok=True)
-        path = (path.parent.joinpath('label') / 
-            (path.stem 
-            + '.txt'))
+        path.parent.joinpath("label").mkdir(exist_ok=True)
+        path = path.parent.joinpath("label") / (path.stem + ".txt")
 
-        with open(path, 'w') as f:
-            f.write('Frame, Label\n')
+        with open(path, "w") as f:
+            f.write("Frame, Label\n")
             labels = []
-            for file in path.parent.glob(path.stem + '*.jpeg'):
-                labels.append(re.search(r'_frame_(\d*)_label_(.*)\.jpeg', str(file)).groups())
+            for file in path.parent.glob(path.stem + "*.jpeg"):
+                labels.append(
+                    re.search(r"_frame_(\d*)_label_(.*)\.jpeg", str(file)).groups()
+                )
                 labels[-1] = (int(labels[-1][0]), labels[-1][1])
             labels = sorted(labels, key=lambda tup: tup[0])
-            f.writelines([str(x) + ',' + y + '\n' for x, y in labels])
-
-            
+            f.writelines([str(x) + "," + y + "\n" for x, y in labels])
 
     def keyPressEvent(self, e):
         if self.filename is not None:
@@ -168,17 +207,18 @@ class FuniiLabel(QMainWindow):
             if e.key() == Qt.Key_Backspace:
                 current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame - 2)
+                self.last_label = None
                 self.display_next_image()
                 return
 
             if e.key() == Qt.Key_F:
-                label = 'Fight'
+                label = "Fight"
             if e.key() == Qt.Key_S:
-                label = 'Stealth'
+                label = "Stealth"
             if e.key() == Qt.Key_E:
-                label = 'Explore'
+                label = "Explore"
             if e.key() == Qt.Key_O:
-                label = 'Other'
+                label = "Other"
             if label is None:
                 return
 
@@ -187,9 +227,12 @@ class FuniiLabel(QMainWindow):
             if not self.display_next_image():
                 # Video ended
                 self.write_label_to_file(self.filename)
-                self.status_bar.showMessage('VideoEnded')
+                self.status_bar.showMessage("VideoEnded")
                 self.filename = None
                 self.cap.release()
+                if len(self.batch) > 0:
+                    self.load_file(self.batch.pop())
+
 
 class AboutDialog(QDialog):
     """Create the necessary elements to show helpful text in a dialog."""
