@@ -23,7 +23,7 @@ setup(
     package_data={'funiilabel.images': ['*.png']},
     entry_points={
         'console_scripts': [
-            'FuniiLabel=funiilabel.FuniiLabel:main'
+            'FuniiLabel=funiilabel.funiilabel:main'
         ]
     },
     install_requires=requirements,

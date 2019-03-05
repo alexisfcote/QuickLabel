@@ -1,6 +1,7 @@
 import pytest
 import pkg_resources
 import shutil
+import time
 from os.path import join as pjoin
 
 
@@ -8,13 +9,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QFileDialog
 
 
-from funiilabel import FuniiLabel
+from funiilabel import funiilabel
 
 
 @pytest.fixture
 def window(qtbot):
     """Pass the application to the test functions via a pytest fixture."""
-    new_window = FuniiLabel.FuniiLabel()
+    new_window = funiilabel.FuniiLabel()
     qtbot.add_widget(new_window)
     new_window.show()
     yield new_window
@@ -61,6 +62,10 @@ def test_open_file(window, qtbot, mock):
 
     mock.patch.object(QFileDialog, 'getOpenFileName', return_value=(vid_path, 1))
     qtbot.keyClick(window.file_sub_menu, Qt.Key_Enter)
+    while not window.label_recorder_process.label_queue.empty():
+        # wait for recording to process
+        time.sleep(0.1)
+
     assert pkg_resources.resource_exists(
             "tests.test_video", pjoin("label","vid_frame_40_label_Other.jpeg")
         )

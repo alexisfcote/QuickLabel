@@ -60,3 +60,5 @@ target/
 
 .vscode/
 .ipynb_checkpoints/
+
+tests/test_video/label

@@ -2,6 +2,8 @@ import os
 import pathlib
 import re
 import sys
+import logging
+import time
 
 import numpy as np
 import pkg_resources
@@ -13,14 +15,19 @@ from PyQt5.QtWidgets import (QAction, QApplication, QDesktopWidget, QDialog,
 
 import cv2
 from funiilabel.config import *
+from funiilabel.predictprocess import PredictProcess, Manager, Event, FASTAI
+from funiilabel.imagereaderprocess import ImageReaderProcess
+
+FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-class FuniiLabel(QMainWindow):
+
+class FuniiLabelGUI(QMainWindow):
     """Create the main window that stores all of the widgets necessary for the application."""
 
     def __init__(self, parent=None):
         """Initialize the components of the main window."""
-        super(FuniiLabel, self).__init__(parent)
+        super(FuniiLabelGUI, self).__init__(parent)
         self.setWindowTitle("FuniiLabel")
         window_icon = pkg_resources.resource_filename(
             "funiilabel.images", "ic_insert_drive_file_black_48dp_1x.png"
@@ -44,9 +51,6 @@ class FuniiLabel(QMainWindow):
         self.file_menu()
         self.help_menu()
 
-        self.filename = None
-        self.last_label = None
-        self.batch = []
 
     def file_menu(self):
         """Create a file submenu with an Open File item that opens a file dialog."""
@@ -95,6 +99,9 @@ class FuniiLabel(QMainWindow):
             self.load_file(filename)
             self.batch = []
 
+    def load_file(self, file):
+        raise NotImplementedError
+
     def open_batch(self):
         folderpath = pathlib.Path(QFileDialog.getExistingDirectory(self, "Open Folder"))
         if not folderpath:
@@ -112,126 +119,12 @@ class FuniiLabel(QMainWindow):
         if len(self.batch) > 0:
             self.load_file(self.batch.pop())
 
-    def load_file(self, filename):
-        self.filename = filename
-        self.status_bar.showMessage("Video Loaded", 5000)
-        self.last_label = None
-        self.cap = cv2.VideoCapture(self.filename)
-        _, frame = self.cap.read()
-        self.frame = frame
-        self.height, self.width, self.channel = frame.shape
-        self.bytesPerLine = 3 * self.width
-        self.resize(self.width, self.height)
-        self.display_next_image()
-        if len(self.batch) > 0:
-            self.status_bar.showMessage(f"{self.filename}. {len(self.batch)} files to go")
-        else:
-            self.status_bar.showMessage(f"{self.filename}.")
-
-    def display_next_image(self):
-        # Capture frame-by-frame
-        ret, frame = self.cap.read()
-        self.frame = np.copy(frame)
-        if not ret:
-            return False
-        font = cv2.FONT_HERSHEY_SIMPLEX
-        cv2.putText(
-            frame,
-            self.last_label,
-            (10, self.height - 10),
-            font,
-            4,
-            (255, 255, 255),
-            3,
-            cv2.LINE_AA,
-        )
-        cv2.putText(
-            frame,
-            str(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES)))
-            + '/' + str(int(self.cap.get(cv2.CAP_PROP_FRAME_COUNT))),
-            (self.width-250, self.height - 10),
-            font,
-            1,
-            (255, 255, 255),
-            2,
-            cv2.LINE_AA,
-        )
-
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-        qImg = QImage(
-            frame.data, self.width, self.height, self.bytesPerLine, QImage.Format_RGB888
-        )
-        pixmap = QPixmap.fromImage(qImg)
-        self.label.setPixmap(pixmap)
-        return True
-
-    def record_label(self):
-        path = pathlib.Path(self.filename)
-        path.parent.joinpath("label").mkdir(exist_ok=True)
-        path = path.parent.joinpath("label") / (
-            path.stem
-            + "_frame_"
-            + str(int(self.cap.get(cv2.CAP_PROP_POS_FRAMES) - 1))
-            + "_label_"
-            + self.last_label
-            + ".jpeg"
-        )
-        cv2.imwrite(str(path), self.frame)
 
     def record_label_to_file(self):
         """Open a QFileDialog to allow the user to open a file into the application."""
         filename, accepted = QFileDialog.getOpenFileName(self, "Open File")
         if accepted:
             self.write_label_to_file(filename)
-
-    def write_label_to_file(self, filename):
-        path = pathlib.Path(filename)
-        path.parent.joinpath("label").mkdir(exist_ok=True)
-        path = path.parent.joinpath("label") / (path.stem + ".txt")
-
-        with open(path, "w") as f:
-            f.write("Frame, Label\n")
-            labels = []
-            for file in path.parent.glob(path.stem + "*.jpeg"):
-                labels.append(
-                    re.search(r"_frame_(\d*)_label_(.*)\.jpeg", str(file)).groups()
-                )
-                labels[-1] = (int(labels[-1][0]), labels[-1][1])
-            labels = sorted(labels, key=lambda tup: tup[0])
-            f.writelines([str(x) + "," + y + "\n" for x, y in labels])
-
-    def keyPressEvent(self, e):
-        if self.filename is not None:
-            label = None
-            if e.key() == Qt.Key_Backspace:
-                current_frame = self.cap.get(cv2.CAP_PROP_POS_FRAMES)
-                self.cap.set(cv2.CAP_PROP_POS_FRAMES, current_frame - 2)
-                self.last_label = None
-                self.display_next_image()
-                return
-
-            if e.key() == Qt.Key_F:
-                label = "Fight"
-            if e.key() == Qt.Key_S:
-                label = "Stealth"
-            if e.key() == Qt.Key_E:
-                label = "Explore"
-            if e.key() == Qt.Key_O:
-                label = "Other"
-            if label is None:
-                return
-
-            self.last_label = label
-            self.record_label()
-            if not self.display_next_image():
-                # Video ended
-                self.write_label_to_file(self.filename)
-                self.status_bar.showMessage("VideoEnded")
-                self.filename = None
-                self.cap.release()
-                if len(self.batch) > 0:
-                    self.load_file(self.batch.pop())
 
 
 class AboutDialog(QDialog):
@@ -257,18 +150,3 @@ class AboutDialog(QDialog):
         self.layout.addWidget(author)
 
         self.setLayout(self.layout)
-
-
-def main():
-    application = QApplication(sys.argv)
-    window = FuniiLabel()
-    desktop = QDesktopWidget().availableGeometry()
-    width = (desktop.width() - window.width()) / 2
-    height = (desktop.height() - window.height()) / 2
-    window.show()
-    window.move(width, height)
-    sys.exit(application.exec_())
-
-
-if __name__ == "__main__":
-    main()
