@@ -4,6 +4,7 @@ import logging
 
 FASTAI = False
 BATCH_SIZE = 24
+SKIP = 1
 try:
     from fastai.vision import load_learner, PIL, Path, pil2tensor, np, Image
     import torch
@@ -40,7 +41,7 @@ class PredictProcess(Process):
         while not self.stop_event.is_set() and not finished:
             im_batch = []
             im_batch_frame_number = []
-            for _ in range(BATCH_SIZE):
+            for _ in range(0, BATCH_SIZE):
                 frame = self.image_reader_process[frame_number]
                 if frame is not None:
                     im_batch_frame_number.append(frame_number)
@@ -48,9 +49,11 @@ class PredictProcess(Process):
                 else:
                     finished = True
                     logging.debug("finished DL process")
-                frame_number += 1
-            #self.managed_dict[frame_number] = self.predict(frame)
-            labels, probs = self.predict_batch(im_batch)
+                frame_number += SKIP
+
+            if len(im_batch):
+                labels, probs = self.predict_batch(im_batch)
+
             for frame_n, label, prob in zip(im_batch_frame_number, labels, probs):
                 self.managed_dict[frame_n] = (label, prob)
             logging.debug("processed image {}".format(frame_number))
