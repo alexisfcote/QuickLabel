@@ -20,7 +20,7 @@ setup(
     author_email='alexisfcote@gmail.com',
     url='https://github.com/alexisfcote/FuniiLabel',
     packages=find_packages(),
-    package_data={'funiilabel.images': ['*.png']},
+    package_data={'funiilabel.images': ['*.png'], 'models':['*.pkl']},
     entry_points={
         'console_scripts': [
             'FuniiLabel=funiilabel.funiilabel:main'
@@ -30,9 +30,8 @@ setup(
     zip_safe=False,
     keywords='FuniiLabel',
     classifiers=[
-        'Programming Language :: Python :: 3.3',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
     ],
     test_suite='pytest',
     setup_requires=["pytest-runner"],
