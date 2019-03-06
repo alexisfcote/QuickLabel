@@ -209,13 +209,15 @@ class FuniiLabel(FuniiLabelGUI):
                     frame=self.frame,
                 )
 
-            if not self.display_next_image():
-                # Video ended
-                self.write_labels_to_file(self.filename)
-                self.status_bar.showMessage("VideoEnded")
-                self.filename = None
-                if len(self.batch) > 0:
-                    self.load_file(self.batch.pop())
+                if not self.display_next_image():
+                    # Video ended
+                    self.write_labels_to_file(self.filename)
+                    self.status_bar.showMessage("VideoEnded")
+                    self.filename = None
+                    if FASTAI:
+                        self.prediction_process.stop_event.set()
+                    if len(self.batch) > 0:
+                        self.load_file(self.batch.pop())
 
     def closeEvent(self, event):
         for proc in [self.image_reader_process, self.prediction_process, self.label_recorder_process]:

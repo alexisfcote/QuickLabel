@@ -109,11 +109,13 @@ class FuniiLabelGUI(QMainWindow):
 
         self.batch = []
         files = folderpath.glob("*.mp4")
+        files = sorted(files)
         already_labelled_files = set([x.stem.split('_frame_')[0] for x in (folderpath / 'label').glob('*.jpeg')])
+        logging.debug("already_labelled_files :" + str(already_labelled_files))
 
         for file in files:
             if os.path.getsize(folderpath / file) > MIN_FILE_SIZE:
-                if not (folderpath / file).stem in already_labelled_files:
+                if (folderpath / file).stem not in already_labelled_files:
                     self.batch.append(str(folderpath / file))
 
         if len(self.batch) > 0:
