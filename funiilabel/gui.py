@@ -76,10 +76,17 @@ class FuniiLabelGUI(QMainWindow):
         self.record_label_to_file_action.setShortcut("CTRL+R")
         self.record_label_to_file_action.triggered.connect(self.record_label_to_file)
 
+        self.predict_on_video_action = QAction("Predict on video", self)
+        self.predict_on_video_action.setStatusTip("Record labelled video to file.")
+        self.predict_on_video_action.setShortcut("CTRL+R")
+        self.predict_on_video_action.triggered.connect(self.predict_on_video_open)
+
         self.file_sub_menu.addAction(self.open_action)
         self.file_sub_menu.addAction(self.open_batch_action)
         self.file_sub_menu.addAction(self.exit_action)
         self.file_sub_menu.addAction(self.record_label_to_file_action)
+        self.file_sub_menu.addAction(self.predict_on_video_action)
+        
 
     def help_menu(self):
         """Create a help submenu with an About item tha opens an about dialog."""
@@ -127,6 +134,11 @@ class FuniiLabelGUI(QMainWindow):
         filename, accepted = QFileDialog.getOpenFileName(self, "Open File")
         if accepted:
             self.write_label_to_file(filename)
+
+    def predict_on_video_open(self):
+        filename, accepted = QFileDialog.getOpenFileName(self, "Open File")
+        if accepted:
+            self.predict_on_video(filename)
 
 
 class AboutDialog(QDialog):

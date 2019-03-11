@@ -9,6 +9,7 @@ try:
     from fastai.vision import load_learner, PIL, Path, pil2tensor, np, Image
     import torch
     FASTAI = True
+    logging.debug('Fastai found')
 except NameError:
     logging.warning('Fastai not installed')
 
@@ -23,6 +24,7 @@ class PredictProcess(Process):
         self.managed_dict = Manager().dict()
         self.image_reader_process = image_reader_process
         self.stop_event = Event()
+        self.finished = False
     
     def prepare_model(self):
         try:
@@ -37,8 +39,8 @@ class PredictProcess(Process):
     def run(self):
         self.prepare_model()
         frame_number = 0
-        finished = False
-        while not self.stop_event.is_set() and not finished:
+        self.finished = False
+        while not self.stop_event.is_set() and not self.finished:
             im_batch = []
             im_batch_frame_number = []
             for _ in range(0, BATCH_SIZE):
@@ -47,7 +49,7 @@ class PredictProcess(Process):
                     im_batch_frame_number.append(frame_number)
                     im_batch.append(frame)
                 else:
-                    finished = True
+                    self.finished = True
                     logging.debug("finished DL process")
                 frame_number += SKIP
 

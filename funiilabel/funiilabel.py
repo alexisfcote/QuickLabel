@@ -7,7 +7,7 @@ import time
 
 import numpy as np
 import pkg_resources
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtGui import QIcon, QImage, QPixmap
 from PyQt5.QtWidgets import (
     QAction,
@@ -57,6 +57,7 @@ class FuniiLabel(FuniiLabelGUI):
         _, frame = cap.read()
         cap.release()
         self.frame = frame
+        self.printed_frame = frame
         self.height, self.width, self.channel = frame.shape
         self.bytesPerLine = 3 * self.width
         self.resize(self.width, self.height)
@@ -149,6 +150,9 @@ class FuniiLabel(FuniiLabelGUI):
             cv2.LINE_AA,
         )
 
+
+
+        self.printed_frame = frame
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
         qImg = QImage(
@@ -159,6 +163,31 @@ class FuniiLabel(FuniiLabelGUI):
         self.current_frame_number += 1
 
         return True
+
+
+    def predict_on_video(self, filename):
+        self.status_bar.showMessage("Predicting Only")
+        self.load_file(filename)
+        fourcc = cv2.VideoWriter_fourcc(*'DIVX')
+        self.out = cv2.VideoWriter('output.avi',fourcc, 24.0, (self.width, self.height)) 
+        self.i = 0
+        self.predict_next_timer()
+
+    def predict_next_timer(self):
+        if self.i+1 in self.prediction_process.managed_dict.keys() or self.prediction_process.finished:
+            if self.display_next_image():
+                self.out.write(self.printed_frame)
+                logging.debug("Writing")
+                self.i += 1
+                QTimer.singleShot(10, self.predict_next_timer)
+            else:
+                self.out.release()
+                self.status_bar.showMessage("Done!")
+        else:
+            logging.debug('Waiting for image {} to be processed'.format(self.i))
+            QTimer.singleShot(1000, self.predict_next_timer)
+
+
 
     def record_label_to_file(self):
         """Open a QFileDialog to allow the user to open a file into the application."""
