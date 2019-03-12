@@ -53,26 +53,33 @@ class FuniiLabel(FuniiLabelGUI):
         self.filename = filename
         self.status_bar.showMessage("Video Loaded", 5000)
         self.last_label = None
-        cap = cv2.VideoCapture(self.filename)
-        _, frame = cap.read()
-        cap.release()
+        
+        if self.image_reader_process is not None:
+            self.image_reader_process.stop_event.set()
+        self.image_reader_process = ImageReaderProcess(self.filename)
+        self.image_reader_process.start()
+        self.current_frame_number = 0
+        
+        frame = self.image_reader_process[0]
         self.frame = frame
         self.printed_frame = frame
         self.height, self.width, self.channel = frame.shape
         self.bytesPerLine = 3 * self.width
         self.resize(self.width, self.height)
 
-        self.image_reader_process = ImageReaderProcess(self.filename)
-        self.image_reader_process.start()
-        self.current_frame_number = 0
-
+        if self.label_recorder_process is not None:
+            self.label_recorder_process.stop_event.set()
         self.label_recorder_process = LabelRecorderProcess(self.filename)
         self.label_recorder_process.start()
+
+        if self.prediction_process is not None:
+            self.prediction_process.stop_event.set()
 
         if FASTAI:
             model_path = pkg_resources.resource_filename(
             "models", "cnn1.pkl"
         )
+
             self.prediction_process = PredictProcess(
                 model_path, filename, self.image_reader_process)
             self.prediction_process.start()

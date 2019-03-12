@@ -62,3 +62,5 @@ target/
 .ipynb_checkpoints/
 
 tests/test_video/label
+
+output.avi

@@ -56,9 +56,9 @@ class PredictProcess(Process):
             if len(im_batch):
                 labels, probs = self.predict_batch(im_batch)
 
-            for frame_n, label, prob in zip(im_batch_frame_number, labels, probs):
-                self.managed_dict[frame_n] = (label, prob)
-            logging.debug("processed image {}".format(frame_number))
+                for frame_n, label, prob in zip(im_batch_frame_number, labels, probs):
+                    self.managed_dict[frame_n] = (label, prob)
+                logging.debug("processed image {}".format(frame_number))
         logging.debug("Quitting DL process")
             
 
