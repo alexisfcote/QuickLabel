@@ -9,13 +9,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtWidgets import QDialog, QFileDialog
 
 
-from funiilabel import funiilabel
+from quicklabel import quicklabel
 
 
 @pytest.fixture
 def window(qtbot):
     """Pass the application to the test functions via a pytest fixture."""
-    new_window = funiilabel.FuniiLabel()
+    new_window = quicklabel.quickLabel()
     qtbot.add_widget(new_window)
     new_window.show()
     yield new_window
@@ -30,7 +30,7 @@ def window(qtbot):
 
 def test_window_title(window):
     """Check that the window title shows as declared."""
-    assert window.windowTitle() == 'FuniiLabel'
+    assert window.windowTitle() == 'quickLabel'
 
 
 

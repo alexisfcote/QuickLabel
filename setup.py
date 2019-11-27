@@ -13,22 +13,22 @@ test_requirements = [
 ]
 
 setup(
-    name='FuniiLabel',
+    name='quickLabel',
     version='0.0.1',
-    description="App to label video from the FUNii project",
+    description="App to label video from the quick project",
     author="Alexis Fortin-Cote",
     author_email='alexisfcote@gmail.com',
-    url='https://github.com/alexisfcote/FuniiLabel',
+    url='https://github.com/alexisfcote/quickLabel',
     packages=find_packages(),
-    package_data={'funiilabel.images': ['*.png'], 'models':['*.pkl']},
+    package_data={'quicklabel.images': ['*.png'], 'models':['*.pkl']},
     entry_points={
         'console_scripts': [
-            'FuniiLabel=funiilabel.funiilabel:main'
+            'quickLabel=quicklabel.quicklabel:main'
         ]
     },
     install_requires=requirements,
     zip_safe=False,
-    keywords='FuniiLabel',
+    keywords='quickLabel',
     classifiers=[
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',

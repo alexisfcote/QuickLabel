@@ -14,23 +14,23 @@ from PyQt5.QtWidgets import (QAction, QApplication, QDesktopWidget, QDialog,
                              QVBoxLayout, QWidget)
 
 import cv2
-from funiilabel.config import *
-from funiilabel.predictprocess import PredictProcess, Manager, Event, FASTAI
-from funiilabel.imagereaderprocess import ImageReaderProcess
+from quicklabel.config import *
+from quicklabel.predictprocess import PredictProcess, Manager, Event, FASTAI
+from quicklabel.imagereaderprocess import ImageReaderProcess
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
 
-class FuniiLabelGUI(QMainWindow):
+class quickLabelGUI(QMainWindow):
     """Create the main window that stores all of the widgets necessary for the application."""
 
     def __init__(self, parent=None):
         """Initialize the components of the main window."""
-        super(FuniiLabelGUI, self).__init__(parent)
-        self.setWindowTitle("FuniiLabel")
+        super(quickLabelGUI, self).__init__(parent)
+        self.setWindowTitle("quickLabel")
         window_icon = pkg_resources.resource_filename(
-            "funiilabel.images", "ic_insert_drive_file_black_48dp_1x.png"
+            "quicklabel.images", "ic_insert_drive_file_black_48dp_1x.png"
         )
         self.setWindowIcon(QIcon(window_icon))
 
@@ -150,7 +150,7 @@ class AboutDialog(QDialog):
 
         self.setWindowTitle("About")
         help_icon = pkg_resources.resource_filename(
-            "funiilabel.images", "ic_help_black_48dp_1x.png"
+            "quicklabel.images", "ic_help_black_48dp_1x.png"
         )
         self.setWindowIcon(QIcon(help_icon))
         self.resize(300, 200)

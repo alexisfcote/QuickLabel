@@ -23,21 +23,21 @@ from PyQt5.QtWidgets import (
 )
 
 import cv2
-from funiilabel.config import *
-from funiilabel.gui import FuniiLabelGUI
-from funiilabel.predictprocess import PredictProcess, Manager, Event, FASTAI
-from funiilabel.imagereaderprocess import ImageReaderProcess
-from funiilabel.labelrecorderprocess import LabelRecorderProcess
+from quicklabel.config import *
+from quicklabel.gui import quickLabelGUI
+from quicklabel.predictprocess import PredictProcess, Manager, Event, FASTAI
+from quicklabel.imagereaderprocess import ImageReaderProcess
+from quicklabel.labelrecorderprocess import LabelRecorderProcess
 
 FONT = cv2.FONT_HERSHEY_SIMPLEX
 
 
-class FuniiLabel(FuniiLabelGUI):
+class quickLabel(quickLabelGUI):
     """Create the main window that stores all of the widgets necessary for the application."""
 
     def __init__(self, parent=None):
         """Initialize the components of the main window."""
-        super(FuniiLabel, self).__init__(parent)
+        super(quickLabel, self).__init__(parent)
 
         self.filename = None
         self.last_label = None
@@ -264,7 +264,7 @@ class FuniiLabel(FuniiLabelGUI):
 
 def main():
     application = QApplication(sys.argv)
-    window = FuniiLabel()
+    window = quickLabel()
     desktop = QDesktopWidget().availableGeometry()
     width = (desktop.width() - window.width()) / 2
     height = (desktop.height() - window.height()) / 2

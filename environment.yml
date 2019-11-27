@@ -1,4 +1,4 @@
-name: funii-label
+name: quick-label
 channels:
   - conda-forge
   - defaults
