@@ -10,7 +10,7 @@ try:
     import torch
     FASTAI = True
     logging.debug('Fastai found')
-except NameError:
+except ModuleNotFoundError:
     logging.warning('Fastai not installed')
 
 
